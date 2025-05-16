@@ -7,6 +7,7 @@ import (
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v2/persist"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,8 +26,8 @@ func mockExecuteWithContextTimeOut(ctx context.Context, fn func() error) error {
 	}
 }
 
-func clearDBPolicy() (*casbin.Enforcer, *ctxBunAdapter) {
-	ca, err := NewCtxAdapter("mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+func clearDBPolicy() (*casbin.Enforcer, persist.ContextAdapter) {
+	ca, err := NewCtxAdapter("mysql", "root:123456@tcp(127.0.0.1:3306)/test")
 	if err != nil {
 		panic(err)
 	}
@@ -42,7 +43,7 @@ func clearDBPolicy() (*casbin.Enforcer, *ctxBunAdapter) {
 
 func TestCtxBunAdapter_LoadPolicyCtx(t *testing.T) {
 	e, _ := casbin.NewEnforcer("testdata/rbac_model.conf", "testdata/rbac_policy.csv")
-	ca, err := NewCtxAdapter("mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+	ca, err := NewCtxAdapter("mysql", "root:123456@tcp(127.0.0.1:3306)/test")
 	if err != nil {
 		panic(err)
 	}

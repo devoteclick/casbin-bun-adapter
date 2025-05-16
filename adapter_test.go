@@ -4,18 +4,22 @@ import (
 	"testing"
 
 	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v2/persist"
 	"github.com/casbin/casbin/v2/util"
 )
 
 func testGetPolicy(t *testing.T, e *casbin.Enforcer, want [][]string) {
-	got := e.GetPolicy()
+	got, err := e.GetPolicy()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if !util.Array2DEquals(want, got) {
 		t.Errorf("got %v, want %v", got, want)
 	}
 }
 
-func initPolicy(t *testing.T, adapter *bunAdapter) {
+func initPolicy(t *testing.T, adapter persist.Adapter) {
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", "testdata/rbac_policy.csv")
 	if err != nil {
 		panic(err)
@@ -38,8 +42,8 @@ func initPolicy(t *testing.T, adapter *bunAdapter) {
 	)
 }
 
-func initAdapter(t *testing.T, driverName, dataSourceName string, opts ...adapterOption) *bunAdapter {
-	a, err := NewAdapter(driverName, dataSourceName, opts...)
+func initAdapter(t *testing.T, driverName, dataSourceName string) persist.Adapter {
+	a, err := NewAdapter(driverName, dataSourceName)
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +53,7 @@ func initAdapter(t *testing.T, driverName, dataSourceName string, opts ...adapte
 	return a
 }
 
-func testSaveLoad(t *testing.T, a *bunAdapter) {
+func testSaveLoad(t *testing.T, a persist.Adapter) {
 	initPolicy(t, a)
 
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", a)
@@ -63,7 +67,7 @@ func testSaveLoad(t *testing.T, a *bunAdapter) {
 	)
 }
 
-func testAutoSave(t *testing.T, a *bunAdapter) {
+func testAutoSave(t *testing.T, a persist.Adapter) {
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", a)
 	if err != nil {
 		t.Fatalf("failed to create enforcer: %v", err)
@@ -122,7 +126,7 @@ func testAutoSave(t *testing.T, a *bunAdapter) {
 }
 
 func TestBunAdapters(t *testing.T) {
-	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test")
 	testSaveLoad(t, a)
 	testAutoSave(t, a)
 
@@ -140,7 +144,7 @@ func TestBunAdapters(t *testing.T) {
 }
 
 func TestBunAdapter_AddPolicy(t *testing.T) {
-	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test")
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", a)
 	if err != nil {
 		t.Fatalf("failed to create enforcer: %v", err)
@@ -159,7 +163,7 @@ func TestBunAdapter_AddPolicy(t *testing.T) {
 }
 
 func TestBunAdapter_AddPolicies(t *testing.T) {
-	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test")
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", a)
 	if err != nil {
 		t.Fatalf("failed to create enforcer: %v", err)
@@ -185,7 +189,7 @@ func TestBunAdapter_AddPolicies(t *testing.T) {
 }
 
 func TestBunAdapter_RemovePolicy(t *testing.T) {
-	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test")
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", a)
 	if err != nil {
 		t.Fatalf("failed to create enforcer: %v", err)
@@ -204,7 +208,7 @@ func TestBunAdapter_RemovePolicy(t *testing.T) {
 }
 
 func TestBunAdapter_RemovePolicies(t *testing.T) {
-	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test")
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", a)
 	if err != nil {
 		t.Fatalf("failed to create enforcer: %v", err)
@@ -223,7 +227,7 @@ func TestBunAdapter_RemovePolicies(t *testing.T) {
 }
 
 func TestBunAdapter_RemoveFilteredPolicy(t *testing.T) {
-	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test")
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", a)
 	if err != nil {
 		t.Fatalf("failed to create enforcer: %v", err)
@@ -313,7 +317,7 @@ func TestBunAdapter_RemoveFilteredPolicy(t *testing.T) {
 }
 
 func TestBunAdapter_UpdatePolicy(t *testing.T) {
-	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test")
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", a)
 	if err != nil {
 		t.Fatalf("failed to create enforcer: %v", err)
@@ -340,7 +344,7 @@ func TestBunAdapter_UpdatePolicy(t *testing.T) {
 }
 
 func TestBunAdapter_UpdatePolicies(t *testing.T) {
-	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test")
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", a)
 	if err != nil {
 		t.Fatalf("failed to create enforcer: %v", err)
@@ -367,7 +371,7 @@ func TestBunAdapter_UpdatePolicies(t *testing.T) {
 }
 
 func TestBunAdapter_UpdateFilteredPolicies(t *testing.T) {
-	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test", WithDebugMode())
+	a := initAdapter(t, "mysql", "root:root@tcp(127.0.0.1:3306)/test")
 	e, err := casbin.NewEnforcer("testdata/rbac_model.conf", a)
 	if err != nil {
 		t.Fatalf("failed to create enforcer: %v", err)

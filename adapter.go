@@ -15,9 +15,6 @@ import (
 	"github.com/uptrace/bun/dialect/mysqldialect"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
-	"github.com/uptrace/bun/driver/pgdriver"
-	"github.com/uptrace/bun/driver/sqliteshim"
-	"github.com/uptrace/bun/extra/bundebug"
 )
 
 var (
@@ -30,19 +27,10 @@ var (
 )
 
 type bunAdapter struct {
-	db        *bun.DB
-	debugMode bool
+	db *bun.DB
 }
 
-type adapterOption func(*bunAdapter)
-
-func WithDebugMode() adapterOption {
-	return func(a *bunAdapter) {
-		a.debugMode = true
-	}
-}
-
-func NewAdapter(driverName, dataSourceName string, opts ...adapterOption) (*bunAdapter, error) {
+func NewAdapter(driverName, dataSourceName string) (persist.Adapter, error) {
 	sqlDB, err := openSqlDB(driverName, dataSourceName)
 	if err != nil {
 		return nil, err
@@ -53,7 +41,7 @@ func NewAdapter(driverName, dataSourceName string, opts ...adapterOption) (*bunA
 		return nil, err
 	}
 
-	b, err := newAdapter(db, opts...)
+	b, err := newAdapter(db)
 	if err != nil {
 		return nil, err
 	}
@@ -61,13 +49,13 @@ func NewAdapter(driverName, dataSourceName string, opts ...adapterOption) (*bunA
 	return b, nil
 }
 
-func NewAdapterWithSqlDB(sqlDB *sql.DB, driverName string, opts ...adapterOption) (*bunAdapter, error) {
+func NewAdapterWithSqlDB(sqlDB *sql.DB, driverName string) (persist.Adapter, error) {
 	db, err := openBunDB(sqlDB, driverName)
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := newAdapter(db, opts...)
+	b, err := newAdapter(db)
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +63,8 @@ func NewAdapterWithSqlDB(sqlDB *sql.DB, driverName string, opts ...adapterOption
 	return b, nil
 }
 
-func NewAdapterWithBunDB(db *bun.DB, opts ...adapterOption) (*bunAdapter, error) {
-	b, err := newAdapter(db, opts...)
+func NewAdapterWithBunDB(db *bun.DB) (persist.Adapter, error) {
+	b, err := newAdapter(db)
 	if err != nil {
 		return nil, err
 	}
@@ -84,17 +72,9 @@ func NewAdapterWithBunDB(db *bun.DB, opts ...adapterOption) (*bunAdapter, error)
 	return b, nil
 }
 
-func newAdapter(db *bun.DB, opts ...adapterOption) (*bunAdapter, error) {
+func newAdapter(db *bun.DB) (persist.Adapter, error) {
 	b := &bunAdapter{
 		db: db,
-	}
-
-	for _, opt := range opts {
-		opt(b)
-	}
-
-	if b.debugMode {
-		b.db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 	}
 
 	if err := b.createTable(); err != nil {
@@ -114,12 +94,12 @@ func openSqlDB(driverName, dataSourceName string) (*sql.DB, error) {
 	switch driverName {
 	case "mysql":
 		return sql.Open(driverName, dataSourceName)
-	case "postgres":
-		return sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dataSourceName))), nil
+	// case "postgres":
+	// 	return sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dataSourceName))), nil
 	case "mssql":
 		return sql.Open(driverName, dataSourceName)
-	case "sqlite3":
-		return sql.Open(sqliteshim.ShimName, dataSourceName)
+	// case "sqlite3":
+	// 	return sql.Open(sqliteshim.ShimName, dataSourceName)
 	default:
 		return nil, fmt.Errorf("unsupported driver: %s", driverName)
 	}

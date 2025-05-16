@@ -16,15 +16,15 @@ var (
 )
 
 type ctxBunAdapter struct {
-	*bunAdapter
+	persist.Adapter
 }
 
-func NewCtxAdapter(driverName string, dataSourceName string, opts ...adapterOption) (*ctxBunAdapter, error) {
-	adapter, err := NewAdapter(driverName, dataSourceName, opts...)
+func NewCtxAdapter(driverName string, dataSourceName string) (persist.ContextAdapter, error) {
+	adapter, err := NewAdapter(driverName, dataSourceName)
 	if err != nil {
 		return nil, err
 	}
-	return &ctxBunAdapter{adapter}, nil
+	return &ctxBunAdapter{Adapter: adapter}, nil
 }
 
 // executeWithContext is a helper function to execute a function with context and return the result or error.
