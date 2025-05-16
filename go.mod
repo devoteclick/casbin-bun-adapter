@@ -1,4 +1,4 @@
-module github.com/JunNishimura/casbin-bun-adapter
+module github.com/devoteclick/casbin-bun-adapter
 
 go 1.22.0
 
